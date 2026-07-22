@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  >
+
+  <title>Realidade Aumentada — Museu</title>
+
+  <!-- Biblioteca A-Frame -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+
+  <!-- Biblioteca MindAR -->
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      background: #000000;
+    }
+
+    #tela-inicial {
+      position: fixed;
+      z-index: 20;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.9);
+      color: #ffffff;
+      text-align: center;
+    }
+
+    #conteudo-inicial {
+      width: 100%;
+      max-width: 420px;
+    }
+
+    #conteudo-inicial h1 {
+      margin: 0 0 16px;
+      font-size: 24px;
+      line-height: 1.2;
+    }
+
+    #conteudo-inicial p {
+      margin: 0 0 24px;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    #botao-iniciar {
+      padding: 14px 24px;
+      border: none;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #000000;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #orientacao {
+      position: fixed;
+      z-index: 15;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%);
+      width: calc(100% - 48px);
+      max-width: 430px;
+      padding: 12px 16px;
+      box-sizing: border-box;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #ffffff;
+      text-align: center;
+      font-size: 15px;
+      line-height: 1.4;
+      pointer-events: none;
+    }
+
+    #botao-som {
+      position: fixed;
+      z-index: 16;
+      top: 20px;
+      right: 20px;
+      padding: 12px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.8);
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .oculto {
+      display: none !important;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Tela apresentada antes da câmera ser iniciada -->
+  <div id="tela-inicial">
+    <div id="conteudo-inicial">
+      <h1>Experiência em realidade aumentada</h1>
+
+      <p>
+        Toque no botão abaixo, autorize o uso da câmera e aponte o celular
+        para a imagem indicada na exposição.
+      </p>
+
+      <button id="botao-iniciar" type="button">
+        Iniciar experiência
+      </button>
+    </div>
+  </div>
+
+  <!-- Mensagem de orientação apresentada sobre a câmera -->
+  <div id="orientacao" class="oculto">
+    Aponte a câmera para a imagem indicada.
+  </div>
+
+  <!-- Botão que ativa e desativa o áudio -->
+  <button id="botao-som" class="oculto" type="button">
+    Ativar som
+  </button>
+
+  <!-- Cena de realidade aumentada -->
+  <a-scene
+    mindar-image="
+      imageTargetSrc: ./targets.mind;
+      autoStart: false;
+      filterMinCF: 0.0001;
+      filterBeta: 0.001;
+    "
+    color-space="sRGB"
+    renderer="colorManagement: true; physicallyCorrectLights: true"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false"
+    embedded
+  >
+
+    <!-- Arquivos carregados pela experiência -->
+    <a-assets>
+      <video
+        id="video"
+        src="./video.mp4"
+        preload="auto"
+        loop
+        muted
+        playsinline
+        webkit-playsinline
+        crossorigin="anonymous"
+      ></video>
+    </a-assets>
+
+    <!-- Câmera do celular -->
+    <a-camera
+      position="0 0 0"
+      look-controls="enabled: false"
+    ></a-camera>
+
+    <!-- Imagem reconhecida pelo arquivo targets.mind -->
+    <a-entity
+      id="marcador"
+      mindar-image-target="targetIndex: 0"
+    >
+
+      <!--
+        Proporção horizontal 16:9.
+        Para vídeo vertical, use:
+        width="0.5625"
+        height="1"
+      -->
+      <a-video
+        id="video-ra"
+        src="#video"
+        position="0 0 0"
+        width="1"
+        height="0.5625"
+      ></a-video>
+
+    </a-entity>
+
+  </a-scene>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const cena = document.querySelector("a-scene");
+      const marcador = document.querySelector("#marcador");
+      const video = document.querySelector("#video");
+      const telaInicial = document.querySelector("#tela-inicial");
+      const orientacao = document.querySelector("#orientacao");
+      const botaoIniciar = document.querySelector("#botao-iniciar");
+      const botaoSom = document.querySelector("#botao-som");
+
+      let experienciaIniciada = false;
+      let marcadorEncontrado = false;
+
+      /*
+       * Inicia a câmera e a experiência de realidade aumentada.
+       */
+      botaoIniciar.addEventListener("click", async () => {
+        botaoIniciar.disabled = true;
+        botaoIniciar.textContent = "Iniciando...";
+
+        try {
+          /*
+           * O vídeo começa sem som para aumentar a compatibilidade
+           * com os navegadores de celulares.
+           */
+          video.muted = true;
+
+          /*
+           * A tentativa de reprodução após um clique ajuda o navegador
+           * a autorizar o uso posterior do vídeo.
+           */
+          await video.play();
+          video.pause();
+          video.currentTime = 0;
+
+          const sistemaAR = cena.systems["mindar-image-system"];
+
+          if (!sistemaAR) {
+            throw new Error("O sistema de realidade aumentada não foi carregado.");
+          }
+
+          await sistemaAR.start();
+
+          experienciaIniciada = true;
+
+          telaInicial.classList.add("oculto");
+          orientacao.classList.remove("oculto");
+          botaoSom.classList.remove("oculto");
+        } catch (erro) {
+          console.error("Erro ao iniciar a experiência:", erro);
+
+          botaoIniciar.disabled = false;
+          botaoIniciar.textContent = "Tentar novamente";
+
+          alert(
+            "Não foi possível iniciar a experiência. " +
+            "Verifique se o acesso à câmera foi autorizado e tente novamente."
+          );
+        }
+      });
+
+      /*
+       * Ativa ou desativa o som.
+       */
+      botaoSom.addEventListener("click", async () => {
+        if (video.muted) {
+          video.muted = false;
+          botaoSom.textContent = "Desativar som";
+
+          /*
+           * O vídeo só é reproduzido se o marcador estiver visível.
+           */
+          if (marcadorEncontrado) {
+            try {
+              await video.play();
+            } catch (erro) {
+              console.error("Não foi possível ativar o áudio:", erro);
+
+              video.muted = true;
+              botaoSom.textContent = "Ativar som";
+
+              alert(
+                "O navegador não permitiu ativar o som. " +
+                "Toque novamente no botão e tente outra vez."
+              );
+            }
+          }
+        } else {
+          video.muted = true;
+          botaoSom.textContent = "Ativar som";
+        }
+      });
+
+      /*
+       * Executado quando a imagem é reconhecida.
+       */
+      marcador.addEventListener("targetFound", async () => {
+        if (!experienciaIniciada) {
+          return;
+        }
+
+        marcadorEncontrado = true;
+        orientacao.textContent = "Imagem reconhecida.";
+
+        try {
+          await video.play();
+        } catch (erro) {
+          console.error("O vídeo não pôde ser reproduzido:", erro);
+
+          orientacao.textContent =
+            "Imagem reconhecida. Toque em “Ativar som” ou tente novamente.";
+        }
+      });
+
+      /*
+       * Executado quando a imagem deixa de ser reconhecida.
+       */
+      marcador.addEventListener("targetLost", () => {
+        marcadorEncontrado = false;
+        video.pause();
+
+        orientacao.textContent =
+          "Imagem não encontrada. Aponte novamente para o marcador.";
+      });
+    });
+  </script>
+
+</body>
+</html>
