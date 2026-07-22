@@ -225,7 +225,7 @@
            * a autorizar o uso posterior do vídeo.
            */
           await video.play();
-          video.pause();
+          video.load();
           video.currentTime = 0;
 
           const sistemaAR = cena.systems["mindar-image-system"];
