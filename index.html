@@ -11,7 +11,10 @@
 
   <title>Realidade Aumentada — Museu</title>
 
+  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+
+  <!-- MindAR -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
@@ -31,6 +34,9 @@
       overscroll-behavior: none;
     }
 
+    /*
+     * Cena ocupando toda a área visível do navegador.
+     */
     #cena-ra {
       position: fixed !important;
       inset: 0 !important;
@@ -42,6 +48,10 @@
       z-index: 2 !important;
     }
 
+    /*
+     * O canvas precisa permanecer transparente para que
+     * a imagem real da câmera apareça por trás dele.
+     */
     .a-canvas,
     canvas.a-canvas,
     canvas[data-aframe-canvas] {
@@ -50,10 +60,15 @@
       width: 100vw !important;
       height: 100dvh !important;
       background: transparent !important;
+      opacity: 1 !important;
       z-index: 2 !important;
     }
 
-    video:not(#video-player) {
+    /*
+     * Vídeo da câmera criado automaticamente pelo MindAR.
+     * O vídeo da obra tem ID "video-ra" e fica excluído desta regra.
+     */
+    video:not(#video-ra) {
       position: fixed !important;
       inset: 0 !important;
       width: 100vw !important;
@@ -68,6 +83,13 @@
       padding: 0 !important;
       background: #000000 !important;
       z-index: 0 !important;
+    }
+
+    /*
+     * O vídeo usado como textura não deve aparecer como elemento comum.
+     */
+    #video-ra {
+      display: none !important;
     }
 
     .a-enter-vr,
@@ -88,7 +110,11 @@
       justify-content: center;
       width: 100vw;
       height: 100dvh;
-      padding: 24px;
+      padding:
+        calc(24px + env(safe-area-inset-top))
+        calc(24px + env(safe-area-inset-right))
+        calc(24px + env(safe-area-inset-bottom))
+        calc(24px + env(safe-area-inset-left));
       background: rgba(0, 0, 0, 0.94);
       color: #ffffff;
       text-align: center;
@@ -128,110 +154,42 @@
       opacity: 0.65;
     }
 
+    #botao-som {
+      position: fixed;
+      z-index: 50;
+      top: calc(18px + env(safe-area-inset-top));
+      right: calc(18px + env(safe-area-inset-right));
+      padding: 12px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.78);
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
     #orientacao {
       position: fixed;
       z-index: 50;
       left: 50%;
-      bottom: calc(18px + env(safe-area-inset-bottom));
+      bottom: calc(22px + env(safe-area-inset-bottom));
       transform: translateX(-50%);
-      width: calc(100% - 32px);
+      width: calc(100% - 40px);
       max-width: 470px;
-      padding: 11px 14px;
+      padding: 13px 16px;
       border-radius: 10px;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.72);
       color: #ffffff;
       text-align: center;
-      font-size: 14px;
+      font-size: 15px;
       line-height: 1.4;
       pointer-events: none;
-      transition: opacity 0.3s ease;
-    }
-
-    /*
-     * O vídeo ocupa quase toda a largura da tela.
-     */
-    #camada-video {
-      position: fixed;
-      z-index: 70;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100vw;
-      height: 100dvh;
-      padding:
-        calc(58px + env(safe-area-inset-top))
-        10px
-        calc(70px + env(safe-area-inset-bottom));
-      pointer-events: none;
-    }
-
-    #janela-video {
-      position: relative;
-      width: 100%;
-      max-width: 900px;
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.7);
-      border-radius: 12px;
-      background: #000000;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.48);
-      pointer-events: auto;
-    }
-
-    #video-player {
-      display: block;
-      width: 100%;
-      height: auto;
-      max-height: 78dvh;
-      aspect-ratio: 16 / 9;
-      object-fit: contain;
-      background: #000000;
-    }
-
-    /*
-     * Controles compactos sobrepostos ao vídeo.
-     */
-    #controles-video {
-      position: absolute;
-      z-index: 5;
-      right: 8px;
-      bottom: 8px;
-      left: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
-      padding: 7px;
-      border-radius: 10px;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(5px);
-    }
-
-    .botao-controle {
-      flex: 1;
-      min-width: 0;
-      min-height: 38px;
-      padding: 8px 6px;
-      border: 1px solid rgba(255, 255, 255, 0.45);
-      border-radius: 8px;
-      background: rgba(20, 20, 20, 0.82);
-      color: #ffffff;
-      font-size: 12px;
-      font-weight: 700;
-      line-height: 1.15;
-      cursor: pointer;
-    }
-
-    #botao-fechar {
-      flex: 0 0 42px;
-      width: 42px;
-      font-size: 20px;
-      background: rgba(105, 10, 10, 0.88);
     }
 
     #mensagem-erro {
       position: fixed;
-      z-index: 120;
+      z-index: 110;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
@@ -249,34 +207,12 @@
     .oculto {
       display: none !important;
     }
-
-    .invisivel {
-      opacity: 0;
-    }
-
-    @media (orientation: landscape) {
-      #camada-video {
-        padding: 10px 18px;
-      }
-
-      #janela-video {
-        width: auto;
-        max-width: 92vw;
-        max-height: 92dvh;
-      }
-
-      #video-player {
-        width: auto;
-        max-width: 92vw;
-        height: 88dvh;
-        max-height: 88dvh;
-      }
-    }
   </style>
 </head>
 
 <body>
 
+  <!-- Tela inicial -->
   <div id="tela-inicial">
     <div id="conteudo-inicial">
 
@@ -294,68 +230,20 @@
     </div>
   </div>
 
+  <!-- Botão de áudio -->
+  <button id="botao-som" class="oculto" type="button">
+    Ativar som
+  </button>
+
+  <!-- Mensagem de orientação -->
   <div id="orientacao" class="oculto">
     Aponte a câmera para a imagem indicada.
   </div>
 
-  <div id="camada-video" class="oculto">
-
-    <div id="janela-video">
-
-      <video
-        id="video-player"
-        src="./video.mp4"
-        preload="auto"
-        playsinline
-        webkit-playsinline
-      ></video>
-
-      <div id="controles-video">
-
-        <button
-          id="botao-pausar"
-          class="botao-controle"
-          type="button"
-          aria-label="Pausar ou continuar"
-        >
-          Pausar
-        </button>
-
-        <button
-          id="botao-som"
-          class="botao-controle"
-          type="button"
-          aria-label="Ativar ou desativar som"
-        >
-          Ativar som
-        </button>
-
-        <button
-          id="botao-reiniciar"
-          class="botao-controle"
-          type="button"
-          aria-label="Reiniciar vídeo"
-        >
-          Reiniciar
-        </button>
-
-        <button
-          id="botao-fechar"
-          class="botao-controle"
-          type="button"
-          aria-label="Fechar vídeo"
-        >
-          ×
-        </button>
-
-      </div>
-
-    </div>
-
-  </div>
-
+  <!-- Mensagem de erro -->
   <div id="mensagem-erro" class="oculto"></div>
 
+  <!-- Cena de realidade aumentada -->
   <a-scene
     id="cena-ra"
     mindar-image="
@@ -372,12 +260,27 @@
       colorManagement: true;
       physicallyCorrectLights: true;
       antialias: true;
+      sortObjects: true;
     "
     background="transparent: true"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
     loading-screen="enabled: false"
   >
+
+    <a-assets timeout="30000">
+
+      <video
+        id="video-ra"
+        src="./video.mp4"
+        preload="auto"
+        loop
+        muted
+        playsinline
+        webkit-playsinline
+      ></video>
+
+    </a-assets>
 
     <a-camera
       position="0 0 0"
@@ -387,7 +290,34 @@
     <a-entity
       id="marcador"
       mindar-image-target="targetIndex: 0"
-    ></a-entity>
+    >
+
+      <!--
+        Vídeo horizontal 16:9.
+
+        Para vídeo vertical:
+        width="0.5625"
+        height="1"
+
+        Para vídeo quadrado:
+        width="1"
+        height="1"
+      -->
+      <a-plane
+        id="plano-video"
+        position="0 0 0.01"
+        rotation="0 0 0"
+        width="1"
+        height="0.5625"
+        material="
+          src: #video-ra;
+          shader: flat;
+          side: double;
+          transparent: false;
+        "
+      ></a-plane>
+
+    </a-entity>
 
   </a-scene>
 
@@ -395,26 +325,19 @@
     document.addEventListener("DOMContentLoaded", () => {
       const cena = document.querySelector("#cena-ra");
       const marcador = document.querySelector("#marcador");
+      const videoRA = document.querySelector("#video-ra");
+      const planoVideo = document.querySelector("#plano-video");
 
       const telaInicial = document.querySelector("#tela-inicial");
       const botaoIniciar = document.querySelector("#botao-iniciar");
-      const orientacao = document.querySelector("#orientacao");
-
-      const camadaVideo = document.querySelector("#camada-video");
-      const videoPlayer = document.querySelector("#video-player");
-
-      const botaoPausar = document.querySelector("#botao-pausar");
       const botaoSom = document.querySelector("#botao-som");
-      const botaoReiniciar = document.querySelector("#botao-reiniciar");
-      const botaoFechar = document.querySelector("#botao-fechar");
-
+      const orientacao = document.querySelector("#orientacao");
       const mensagemErro = document.querySelector("#mensagem-erro");
 
       let experienciaIniciada = false;
-      let videoAberto = false;
+      let marcadorEncontrado = false;
       let somAtivado = false;
       let temporizadorErro = null;
-      let temporizadorOrientacao = null;
 
       function mostrarErro(texto) {
         clearTimeout(temporizadorErro);
@@ -427,19 +350,10 @@
         }, 5000);
       }
 
-      function mostrarOrientacao(texto, ocultarDepois = false) {
-        clearTimeout(temporizadorOrientacao);
-
-        orientacao.textContent = texto;
-        orientacao.classList.remove("oculto", "invisivel");
-
-        if (ocultarDepois) {
-          temporizadorOrientacao = setTimeout(() => {
-            orientacao.classList.add("invisivel");
-          }, 3000);
-        }
-      }
-
+      /*
+       * Torna o fundo do renderer verdadeiramente transparente.
+       * A imagem da câmera permanece por trás do canvas.
+       */
       function tornarCanvasTransparente() {
         if (!cena.renderer) {
           return;
@@ -453,11 +367,30 @@
         }
       }
 
+      function atualizarTexturaVideo() {
+        const objeto = planoVideo.getObject3D("mesh");
+
+        if (!objeto || !objeto.material) {
+          return;
+        }
+
+        objeto.material.needsUpdate = true;
+
+        if (objeto.material.map) {
+          objeto.material.map.needsUpdate = true;
+        }
+      }
+
+      /*
+       * Ajusta somente o vídeo da câmera.
+       * Não altera o tamanho interno do renderer, para evitar
+       * que a projeção da realidade aumentada fique deformada.
+       */
       function ajustarVideoDaCamera() {
         const videos = [...document.querySelectorAll("video")];
 
         const videoCamera = videos.find(
-          (elemento) => elemento.id !== "video-player"
+          (elemento) => elemento.id !== "video-ra"
         );
 
         if (!videoCamera) {
@@ -488,61 +421,27 @@
         });
       }
 
+      /*
+       * O MindAR cria o vídeo da câmera depois do carregamento.
+       * Por isso, o ajuste é repetido algumas vezes.
+       */
       function reforcarVisualizacao() {
-        [0, 100, 300, 600, 1000, 1600, 2500].forEach((atraso) => {
+        const atrasos = [
+          0,
+          100,
+          300,
+          600,
+          1000,
+          1600,
+          2500
+        ];
+
+        atrasos.forEach((atraso) => {
           setTimeout(() => {
             tornarCanvasTransparente();
             ajustarVideoDaCamera();
           }, atraso);
         });
-      }
-
-      async function abrirVideo() {
-        if (videoAberto) {
-          return;
-        }
-
-        videoAberto = true;
-        camadaVideo.classList.remove("oculto");
-
-        videoPlayer.muted = true;
-        somAtivado = false;
-
-        botaoSom.textContent = "Ativar som";
-        botaoPausar.textContent = "Pausar";
-
-        mostrarOrientacao(
-          "Vídeo iniciado. Você já pode afastar a câmera da imagem.",
-          true
-        );
-
-        try {
-          await videoPlayer.play();
-        } catch (erro) {
-          console.error("Erro ao iniciar o vídeo:", erro);
-
-          mostrarErro(
-            "O vídeo não iniciou automaticamente. Toque em “Reiniciar”."
-          );
-        }
-      }
-
-      function fecharVideo() {
-        videoPlayer.pause();
-        videoPlayer.currentTime = 0;
-        videoPlayer.muted = true;
-
-        videoAberto = false;
-        somAtivado = false;
-
-        camadaVideo.classList.add("oculto");
-
-        botaoSom.textContent = "Ativar som";
-        botaoPausar.textContent = "Pausar";
-
-        mostrarOrientacao(
-          "Aponte a câmera novamente para a imagem indicada."
-        );
       }
 
       const observador = new MutationObserver(() => {
@@ -560,13 +459,38 @@
         reforcarVisualizacao();
       });
 
+      /*
+       * O evento arReady indica que o MindAR iniciou a câmera.
+       */
       cena.addEventListener("arReady", () => {
         reforcarVisualizacao();
       });
 
       cena.addEventListener("arError", () => {
         mostrarErro(
-          "Não foi possível iniciar a câmera. Verifique a permissão do navegador."
+          "Não foi possível iniciar a câmera. " +
+          "Verifique a permissão do navegador."
+        );
+      });
+
+      videoRA.addEventListener("loadedmetadata", () => {
+        atualizarTexturaVideo();
+      });
+
+      videoRA.addEventListener("canplay", () => {
+        atualizarTexturaVideo();
+      });
+
+      videoRA.addEventListener("playing", () => {
+        atualizarTexturaVideo();
+      });
+
+      videoRA.addEventListener("error", () => {
+        console.error("Erro no vídeo:", videoRA.error);
+
+        mostrarErro(
+          "O vídeo não pôde ser carregado. Verifique se está em MP4, " +
+          "com vídeo H.264, áudio AAC e formato de pixel yuv420p."
         );
       });
 
@@ -575,12 +499,17 @@
         botaoIniciar.textContent = "Iniciando...";
 
         try {
-          videoPlayer.muted = true;
-          videoPlayer.load();
+          videoRA.muted = true;
+          videoRA.load();
 
-          await videoPlayer.play();
-          videoPlayer.pause();
-          videoPlayer.currentTime = 0;
+          /*
+           * Libera a reprodução durante o clique do visitante.
+           */
+          await videoRA.play();
+          atualizarTexturaVideo();
+
+          videoRA.pause();
+          videoRA.currentTime = 0;
 
           const sistemaAR = cena.systems["mindar-image-system"];
 
@@ -591,16 +520,17 @@
           }
 
           tornarCanvasTransparente();
+
           await sistemaAR.start();
 
           experienciaIniciada = true;
 
           telaInicial.classList.add("oculto");
+          botaoSom.classList.remove("oculto");
           orientacao.classList.remove("oculto");
 
-          mostrarOrientacao(
-            "Aponte a câmera para a imagem indicada."
-          );
+          orientacao.textContent =
+            "Aponte a câmera para a imagem indicada.";
 
           reforcarVisualizacao();
         } catch (erro) {
@@ -616,87 +546,92 @@
         }
       });
 
-      marcador.addEventListener("targetFound", async () => {
-        if (!experienciaIniciada || videoAberto) {
-          return;
-        }
-
-        await abrirVideo();
-      });
-
-      marcador.addEventListener("targetLost", () => {
-        if (!videoAberto) {
-          mostrarOrientacao(
-            "Imagem não encontrada. Aponte novamente para o marcador."
-          );
-        }
-      });
-
-      botaoPausar.addEventListener("click", async () => {
-        if (videoPlayer.paused) {
-          try {
-            await videoPlayer.play();
-            botaoPausar.textContent = "Pausar";
-          } catch (erro) {
-            mostrarErro("Não foi possível continuar o vídeo.");
-          }
-        } else {
-          videoPlayer.pause();
-          botaoPausar.textContent = "Continuar";
-        }
-      });
-
       botaoSom.addEventListener("click", async () => {
         try {
           if (!somAtivado) {
-            videoPlayer.muted = false;
             somAtivado = true;
-            botaoSom.textContent = "Sem som";
+            videoRA.muted = false;
+            botaoSom.textContent = "Desativar som";
 
-            if (videoPlayer.paused) {
-              await videoPlayer.play();
-              botaoPausar.textContent = "Pausar";
+            if (marcadorEncontrado) {
+              await videoRA.play();
+              atualizarTexturaVideo();
             }
           } else {
-            videoPlayer.muted = true;
             somAtivado = false;
+            videoRA.muted = true;
             botaoSom.textContent = "Ativar som";
           }
+
+          orientacao.textContent = marcadorEncontrado
+            ? (
+                somAtivado
+                  ? "Imagem reconhecida. Vídeo em reprodução."
+                  : "Imagem reconhecida. Toque em “Ativar som” para ouvir."
+              )
+            : "Aponte a câmera para a imagem indicada.";
         } catch (erro) {
-          videoPlayer.muted = true;
+          console.error("Erro ao alterar o áudio:", erro);
+
           somAtivado = false;
+          videoRA.muted = true;
           botaoSom.textContent = "Ativar som";
 
           mostrarErro(
-            "O navegador não permitiu ativar o som."
+            "O navegador não permitiu ativar o som. " +
+            "Toque novamente no botão."
           );
         }
       });
 
-      botaoReiniciar.addEventListener("click", async () => {
+      marcador.addEventListener("targetFound", async () => {
+        if (!experienciaIniciada) {
+          return;
+        }
+
+        marcadorEncontrado = true;
+
+        orientacao.textContent = somAtivado
+          ? "Imagem reconhecida. Vídeo em reprodução."
+          : "Imagem reconhecida. Toque em “Ativar som” para ouvir.";
+
         try {
-          videoPlayer.currentTime = 0;
-          await videoPlayer.play();
-          botaoPausar.textContent = "Pausar";
+          videoRA.muted = !somAtivado;
+
+          await videoRA.play();
+
+          atualizarTexturaVideo();
+          tornarCanvasTransparente();
+          ajustarVideoDaCamera();
+
+          let atualizacoes = 0;
+
+          const intervalo = setInterval(() => {
+            atualizarTexturaVideo();
+            tornarCanvasTransparente();
+
+            atualizacoes += 1;
+
+            if (atualizacoes >= 40 || videoRA.paused) {
+              clearInterval(intervalo);
+            }
+          }, 100);
         } catch (erro) {
-          mostrarErro("Não foi possível reiniciar o vídeo.");
+          console.error("Erro ao reproduzir o vídeo:", erro);
+
+          mostrarErro(
+            "O vídeo não iniciou automaticamente. " +
+            "Toque em “Ativar som”."
+          );
         }
       });
 
-      botaoFechar.addEventListener("click", fecharVideo);
+      marcador.addEventListener("targetLost", () => {
+        marcadorEncontrado = false;
+        videoRA.pause();
 
-      videoPlayer.addEventListener("ended", () => {
-        botaoPausar.textContent = "Continuar";
-
-        mostrarOrientacao(
-          "Vídeo encerrado. Reinicie ou feche para reconhecer novamente."
-        );
-      });
-
-      videoPlayer.addEventListener("error", () => {
-        mostrarErro(
-          "O vídeo não pôde ser carregado. Verifique o arquivo MP4."
-        );
+        orientacao.textContent =
+          "Imagem não encontrada. Aponte novamente para o marcador.";
       });
 
       window.addEventListener("resize", reforcarVisualizacao);
@@ -712,12 +647,21 @@
         );
       }
 
-      document.addEventListener("visibilitychange", () => {
+      document.addEventListener("visibilitychange", async () => {
         if (document.visibilityState === "hidden") {
-          videoPlayer.pause();
-          botaoPausar.textContent = "Continuar";
-        } else {
-          reforcarVisualizacao();
+          videoRA.pause();
+          return;
+        }
+
+        reforcarVisualizacao();
+
+        if (marcadorEncontrado) {
+          try {
+            await videoRA.play();
+            atualizarTexturaVideo();
+          } catch (erro) {
+            console.error("Não foi possível retomar o vídeo:", erro);
+          }
         }
       });
     });
