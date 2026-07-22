@@ -5,47 +5,115 @@
 
   <meta
     name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0,
+    user-scalable=no, viewport-fit=cover"
   >
 
   <title>Realidade Aumentada — Museu</title>
 
-  <!-- Biblioteca A-Frame -->
+  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 
-  <!-- Biblioteca MindAR -->
+  <!-- MindAR -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
+    html,
     body {
+      width: 100%;
+      height: 100%;
       margin: 0;
+      padding: 0;
       overflow: hidden;
-      font-family: Arial, sans-serif;
       background: #000000;
+      font-family: Arial, sans-serif;
+      overscroll-behavior: none;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    /*
+     * Faz a cena ocupar toda a tela disponível.
+     */
+    a-scene {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      z-index: 1;
+    }
+
+    /*
+     * Faz o canvas do A-Frame ocupar toda a tela.
+     */
+    .a-canvas {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      display: block !important;
+    }
+
+    /*
+     * O MindAR cria um vídeo HTML para mostrar a câmera.
+     * Estas regras fazem a câmera cobrir toda a tela,
+     * cortando apenas o excesso necessário.
+     */
+    video:not(#video) {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      min-width: 100vw !important;
+      min-height: 100vh !important;
+      object-fit: cover !important;
+      object-position: center center !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    /*
+     * Oculta controles padrão do A-Frame que não serão utilizados.
+     */
+    .a-enter-vr,
+    .a-enter-ar,
+    .a-orientation-modal,
+    .a-dialog {
+      display: none !important;
     }
 
     #tela-inicial {
       position: fixed;
-      z-index: 20;
+      z-index: 30;
       inset: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 24px;
-      box-sizing: border-box;
-      background: rgba(0, 0, 0, 0.9);
+      padding:
+        calc(24px + env(safe-area-inset-top))
+        calc(24px + env(safe-area-inset-right))
+        calc(24px + env(safe-area-inset-bottom))
+        calc(24px + env(safe-area-inset-left));
+      background: rgba(0, 0, 0, 0.92);
       color: #ffffff;
       text-align: center;
     }
 
     #conteudo-inicial {
       width: 100%;
-      max-width: 420px;
+      max-width: 430px;
     }
 
     #conteudo-inicial h1 {
       margin: 0 0 16px;
-      font-size: 24px;
+      font-size: 25px;
       line-height: 1.2;
     }
 
@@ -56,9 +124,11 @@
     }
 
     #botao-iniciar {
-      padding: 14px 24px;
+      width: 100%;
+      max-width: 280px;
+      padding: 15px 20px;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       background: #ffffff;
       color: #000000;
       font-size: 17px;
@@ -66,18 +136,22 @@
       cursor: pointer;
     }
 
+    #botao-iniciar:disabled {
+      opacity: 0.7;
+      cursor: default;
+    }
+
     #orientacao {
       position: fixed;
-      z-index: 15;
+      z-index: 20;
       left: 50%;
-      bottom: 24px;
+      bottom: calc(22px + env(safe-area-inset-bottom));
       transform: translateX(-50%);
-      width: calc(100% - 48px);
-      max-width: 430px;
-      padding: 12px 16px;
-      box-sizing: border-box;
-      border-radius: 8px;
-      background: rgba(0, 0, 0, 0.75);
+      width: calc(100% - 40px);
+      max-width: 450px;
+      padding: 13px 16px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.78);
       color: #ffffff;
       text-align: center;
       font-size: 15px;
@@ -87,17 +161,34 @@
 
     #botao-som {
       position: fixed;
-      z-index: 16;
-      top: 20px;
-      right: 20px;
+      z-index: 21;
+      top: calc(18px + env(safe-area-inset-top));
+      right: calc(18px + env(safe-area-inset-right));
       padding: 12px 16px;
-      border: 1px solid rgba(255, 255, 255, 0.35);
-      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 10px;
       background: rgba(0, 0, 0, 0.8);
       color: #ffffff;
       font-size: 15px;
       font-weight: bold;
       cursor: pointer;
+    }
+
+    #mensagem-erro {
+      position: fixed;
+      z-index: 40;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: calc(100% - 40px);
+      max-width: 430px;
+      padding: 20px;
+      border-radius: 10px;
+      background: rgba(120, 0, 0, 0.95);
+      color: #ffffff;
+      text-align: center;
+      font-size: 15px;
+      line-height: 1.5;
     }
 
     .oculto {
@@ -108,9 +199,10 @@
 
 <body>
 
-  <!-- Tela apresentada antes da câmera ser iniciada -->
+  <!-- Tela inicial -->
   <div id="tela-inicial">
     <div id="conteudo-inicial">
+
       <h1>Experiência em realidade aumentada</h1>
 
       <p>
@@ -121,18 +213,22 @@
       <button id="botao-iniciar" type="button">
         Iniciar experiência
       </button>
+
     </div>
   </div>
 
-  <!-- Mensagem de orientação apresentada sobre a câmera -->
+  <!-- Mensagem inferior -->
   <div id="orientacao" class="oculto">
     Aponte a câmera para a imagem indicada.
   </div>
 
-  <!-- Botão que ativa e desativa o áudio -->
+  <!-- Botão de áudio -->
   <button id="botao-som" class="oculto" type="button">
     Ativar som
   </button>
+
+  <!-- Mensagem de erro -->
+  <div id="mensagem-erro" class="oculto"></div>
 
   <!-- Cena de realidade aumentada -->
   <a-scene
@@ -141,16 +237,23 @@
       autoStart: false;
       filterMinCF: 0.0001;
       filterBeta: 0.001;
+      warmupTolerance: 5;
+      missTolerance: 5;
     "
     color-space="sRGB"
-    renderer="colorManagement: true; physicallyCorrectLights: true"
+    renderer="
+      colorManagement: true;
+      physicallyCorrectLights: true;
+      antialias: true;
+      alpha: true;
+    "
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
-    embedded
+    loading-screen="enabled: false"
   >
 
-    <!-- Arquivos carregados pela experiência -->
-    <a-assets>
+    <a-assets timeout="30000">
+
       <video
         id="video"
         src="./video.mp4"
@@ -159,39 +262,46 @@
         muted
         playsinline
         webkit-playsinline
-        crossorigin="anonymous"
       ></video>
+
     </a-assets>
 
-    <!-- Câmera do celular -->
+    <!-- Câmera -->
     <a-camera
       position="0 0 0"
       look-controls="enabled: false"
     ></a-camera>
 
-    <!-- Imagem reconhecida pelo arquivo targets.mind -->
+    <!-- Imagem reconhecida -->
     <a-entity
       id="marcador"
       mindar-image-target="targetIndex: 0"
     >
 
       <!--
-        Proporção horizontal 16:9.
-        Para vídeo vertical, use:
+        Configuração para vídeo horizontal 16:9.
+
+        Para vídeo vertical 9:16, use:
         width="0.5625"
         height="1"
+
+        Para vídeo quadrado, use:
+        width="1"
+        height="1"
       -->
-<a-plane
-  id="video-ra"
-  position="0 0 0.01"
-  width="1"
-  height="0.5625"
-  material="
-    src: #video;
-    shader: flat;
-    side: double;
-  "
-></a-plane>
+      <a-plane
+        id="plano-video"
+        position="0 0 0.01"
+        rotation="0 0 0"
+        width="1"
+        height="0.5625"
+        material="
+          src: #video;
+          shader: flat;
+          side: double;
+          transparent: false;
+        "
+      ></a-plane>
 
     </a-entity>
 
@@ -202,40 +312,152 @@
       const cena = document.querySelector("a-scene");
       const marcador = document.querySelector("#marcador");
       const video = document.querySelector("#video");
+      const planoVideo = document.querySelector("#plano-video");
+
       const telaInicial = document.querySelector("#tela-inicial");
       const orientacao = document.querySelector("#orientacao");
       const botaoIniciar = document.querySelector("#botao-iniciar");
       const botaoSom = document.querySelector("#botao-som");
+      const mensagemErro = document.querySelector("#mensagem-erro");
 
       let experienciaIniciada = false;
       let marcadorEncontrado = false;
+      let somAtivado = false;
 
       /*
-       * Inicia a câmera e a experiência de realidade aumentada.
+       * Exibe uma mensagem temporária de erro.
+       */
+      function mostrarErro(texto) {
+        mensagemErro.textContent = texto;
+        mensagemErro.classList.remove("oculto");
+
+        setTimeout(() => {
+          mensagemErro.classList.add("oculto");
+        }, 5000);
+      }
+
+      /*
+       * Atualiza a textura do vídeo no plano do A-Frame.
+       */
+      function atualizarTexturaVideo() {
+        const objeto3D = planoVideo.getObject3D("mesh");
+
+        if (
+          objeto3D &&
+          objeto3D.material &&
+          objeto3D.material.map
+        ) {
+          objeto3D.material.map.needsUpdate = true;
+          objeto3D.material.needsUpdate = true;
+        }
+      }
+
+      /*
+       * Reforça o preenchimento total da tela.
+       * O MindAR cria o vídeo da câmera depois que a página já carregou,
+       * por isso o ajuste também é feito por JavaScript.
+       */
+      function ajustarCameraParaTelaCheia() {
+        const videosDaPagina = document.querySelectorAll("video");
+
+        videosDaPagina.forEach((elementoVideo) => {
+          if (elementoVideo.id !== "video") {
+            elementoVideo.style.position = "fixed";
+            elementoVideo.style.top = "0";
+            elementoVideo.style.left = "0";
+            elementoVideo.style.width = "100vw";
+            elementoVideo.style.height = "100vh";
+            elementoVideo.style.minWidth = "100vw";
+            elementoVideo.style.minHeight = "100vh";
+            elementoVideo.style.objectFit = "cover";
+            elementoVideo.style.objectPosition = "center center";
+            elementoVideo.style.margin = "0";
+            elementoVideo.style.padding = "0";
+          }
+        });
+
+        const canvas = document.querySelector(".a-canvas");
+
+        if (canvas) {
+          canvas.style.position = "fixed";
+          canvas.style.top = "0";
+          canvas.style.left = "0";
+          canvas.style.width = "100vw";
+          canvas.style.height = "100vh";
+        }
+      }
+
+      /*
+       * Observa alterações na página para localizar o vídeo da câmera
+       * assim que ele for criado pelo MindAR.
+       */
+      const observador = new MutationObserver(() => {
+        ajustarCameraParaTelaCheia();
+      });
+
+      observador.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+
+      /*
+       * Executado quando a cena termina de carregar.
+       */
+      cena.addEventListener("loaded", () => {
+        ajustarCameraParaTelaCheia();
+      });
+
+      /*
+       * Eventos relacionados ao arquivo de vídeo.
+       */
+      video.addEventListener("loadedmetadata", () => {
+        atualizarTexturaVideo();
+      });
+
+      video.addEventListener("canplay", () => {
+        atualizarTexturaVideo();
+      });
+
+      video.addEventListener("playing", () => {
+        atualizarTexturaVideo();
+      });
+
+      video.addEventListener("error", () => {
+        console.error("Erro no vídeo:", video.error);
+
+        mostrarErro(
+          "O arquivo de vídeo não pôde ser carregado. " +
+          "Verifique se ele está em MP4, com vídeo H.264 e áudio AAC."
+        );
+      });
+
+      /*
+       * Inicia a câmera e o MindAR.
        */
       botaoIniciar.addEventListener("click", async () => {
         botaoIniciar.disabled = true;
         botaoIniciar.textContent = "Iniciando...";
 
         try {
-          /*
-           * O vídeo começa sem som para aumentar a compatibilidade
-           * com os navegadores de celulares.
-           */
           video.muted = true;
+          video.load();
 
           /*
-           * A tentativa de reprodução após um clique ajuda o navegador
-           * a autorizar o uso posterior do vídeo.
+           * Tenta liberar a reprodução do vídeo durante o clique.
            */
           await video.play();
-          video.load();
+
+          atualizarTexturaVideo();
+
+          video.pause();
           video.currentTime = 0;
 
           const sistemaAR = cena.systems["mindar-image-system"];
 
           if (!sistemaAR) {
-            throw new Error("O sistema de realidade aumentada não foi carregado.");
+            throw new Error(
+              "O sistema de realidade aumentada ainda não foi carregado."
+            );
           }
 
           await sistemaAR.start();
@@ -245,15 +467,26 @@
           telaInicial.classList.add("oculto");
           orientacao.classList.remove("oculto");
           botaoSom.classList.remove("oculto");
+
+          orientacao.textContent =
+            "Aponte a câmera para a imagem indicada.";
+
+          /*
+           * Aguarda a criação do vídeo da câmera e aplica o tamanho total.
+           */
+          setTimeout(ajustarCameraParaTelaCheia, 100);
+          setTimeout(ajustarCameraParaTelaCheia, 500);
+          setTimeout(ajustarCameraParaTelaCheia, 1000);
+          setTimeout(ajustarCameraParaTelaCheia, 2000);
         } catch (erro) {
-          console.error("Erro ao iniciar a experiência:", erro);
+          console.error("Erro ao iniciar:", erro);
 
           botaoIniciar.disabled = false;
           botaoIniciar.textContent = "Tentar novamente";
 
-          alert(
+          mostrarErro(
             "Não foi possível iniciar a experiência. " +
-            "Verifique se o acesso à câmera foi autorizado e tente novamente."
+            "Verifique a autorização da câmera e tente novamente."
           );
         }
       });
@@ -262,36 +495,37 @@
        * Ativa ou desativa o som.
        */
       botaoSom.addEventListener("click", async () => {
-        if (video.muted) {
-          video.muted = false;
-          botaoSom.textContent = "Desativar som";
+        try {
+          if (!somAtivado) {
+            video.muted = false;
+            somAtivado = true;
+            botaoSom.textContent = "Desativar som";
 
-          /*
-           * O vídeo só é reproduzido se o marcador estiver visível.
-           */
-          if (marcadorEncontrado) {
-            try {
+            if (marcadorEncontrado) {
               await video.play();
-            } catch (erro) {
-              console.error("Não foi possível ativar o áudio:", erro);
-
-              video.muted = true;
-              botaoSom.textContent = "Ativar som";
-
-              alert(
-                "O navegador não permitiu ativar o som. " +
-                "Toque novamente no botão e tente outra vez."
-              );
+              atualizarTexturaVideo();
             }
+          } else {
+            video.muted = true;
+            somAtivado = false;
+            botaoSom.textContent = "Ativar som";
           }
-        } else {
+        } catch (erro) {
+          console.error("Erro ao alterar o som:", erro);
+
           video.muted = true;
+          somAtivado = false;
           botaoSom.textContent = "Ativar som";
+
+          mostrarErro(
+            "O navegador não permitiu ativar o som. " +
+            "Toque novamente no botão."
+          );
         }
       });
 
       /*
-       * Executado quando a imagem é reconhecida.
+       * Quando a imagem é reconhecida.
        */
       marcador.addEventListener("targetFound", async () => {
         if (!experienciaIniciada) {
@@ -299,27 +533,89 @@
         }
 
         marcadorEncontrado = true;
-        orientacao.textContent = "Imagem reconhecida.";
+
+        orientacao.textContent = somAtivado
+          ? "Imagem reconhecida. Vídeo em reprodução."
+          : "Imagem reconhecida. Toque em “Ativar som” para ouvir.";
 
         try {
+          video.muted = !somAtivado;
+
           await video.play();
+
+          atualizarTexturaVideo();
+
+          /*
+           * Atualiza a textura durante os primeiros segundos.
+           */
+          let atualizacoes = 0;
+
+          const intervaloTextura = setInterval(() => {
+            atualizarTexturaVideo();
+
+            atualizacoes++;
+
+            if (atualizacoes >= 50 || video.paused) {
+              clearInterval(intervaloTextura);
+            }
+          }, 100);
         } catch (erro) {
-          console.error("O vídeo não pôde ser reproduzido:", erro);
+          console.error("Erro ao reproduzir o vídeo:", erro);
 
           orientacao.textContent =
-            "Imagem reconhecida. Toque em “Ativar som” ou tente novamente.";
+            "Imagem reconhecida. Toque em “Ativar som” para iniciar.";
+
+          mostrarErro(
+            "O vídeo não iniciou automaticamente. " +
+            "Toque no botão “Ativar som”."
+          );
         }
       });
 
       /*
-       * Executado quando a imagem deixa de ser reconhecida.
+       * Quando a imagem deixa de ser reconhecida.
        */
       marcador.addEventListener("targetLost", () => {
         marcadorEncontrado = false;
+
         video.pause();
 
         orientacao.textContent =
           "Imagem não encontrada. Aponte novamente para o marcador.";
+      });
+
+      /*
+       * Ajusta a tela quando o celular muda de orientação.
+       */
+      window.addEventListener("resize", () => {
+        ajustarCameraParaTelaCheia();
+      });
+
+      window.addEventListener("orientationchange", () => {
+        setTimeout(ajustarCameraParaTelaCheia, 300);
+      });
+
+      /*
+       * Pausa e retoma quando o navegador vai para segundo plano.
+       */
+      document.addEventListener("visibilitychange", async () => {
+        if (
+          document.visibilityState === "visible" &&
+          marcadorEncontrado
+        ) {
+          try {
+            await video.play();
+            atualizarTexturaVideo();
+            ajustarCameraParaTelaCheia();
+          } catch (erro) {
+            console.error(
+              "Não foi possível retomar o vídeo:",
+              erro
+            );
+          }
+        } else if (document.visibilityState === "hidden") {
+          video.pause();
+        }
       });
     });
   </script>
