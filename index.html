@@ -35,7 +35,7 @@
     }
 
     /*
-     * Cena ocupando toda a tela.
+     * Cena de realidade aumentada em tela cheia.
      */
     #cena-ra {
       position: fixed !important;
@@ -49,7 +49,7 @@
     }
 
     /*
-     * Canvas transparente para deixar a câmera visível.
+     * Canvas transparente para permitir a visualização da câmera.
      */
     .a-canvas,
     canvas.a-canvas,
@@ -63,10 +63,10 @@
     }
 
     /*
-     * Vídeo da câmera criado pelo MindAR.
-     * O vídeo principal possui o ID video-player.
+     * Vídeo criado automaticamente pelo MindAR para exibir a câmera.
+     * O vídeo de conteúdo possui ID video-ra e não recebe estas regras.
      */
-    video:not(#video-player) {
+    video:not(#video-ra) {
       position: fixed !important;
       inset: 0 !important;
       width: 100vw !important;
@@ -81,6 +81,13 @@
       padding: 0 !important;
       background: #000000 !important;
       z-index: 0 !important;
+    }
+
+    /*
+     * O vídeo de conteúdo é usado apenas como textura do plano 3D.
+     */
+    #video-ra {
+      display: none !important;
     }
 
     .a-enter-vr,
@@ -149,13 +156,13 @@
     }
 
     /*
-     * Mensagem inferior.
+     * Mensagem de orientação.
      */
     #orientacao {
       position: fixed;
       z-index: 50;
       left: 50%;
-      bottom: calc(18px + env(safe-area-inset-bottom));
+      bottom: calc(24px + env(safe-area-inset-bottom));
       transform: translateX(-50%);
       width: calc(100% - 32px);
       max-width: 470px;
@@ -171,85 +178,38 @@
     }
 
     /*
-     * Camada fixa do vídeo.
+     * Barra de progresso do vídeo.
+     * Só aparece enquanto o alvo do vídeo estiver reconhecido.
      */
-    #camada-video {
+    #controle-progresso {
       position: fixed;
-      z-index: 70;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100vw;
-      height: 100dvh;
-      padding:
-        calc(58px + env(safe-area-inset-top))
-        10px
-        calc(70px + env(safe-area-inset-bottom));
-      pointer-events: none;
-    }
-
-    #janela-video {
-      position: relative;
-      width: 100%;
-      max-width: 900px;
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.7);
+      z-index: 60;
+      left: 50%;
+      bottom: calc(24px + env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      width: calc(100% - 36px);
+      max-width: 560px;
+      padding: 12px 14px;
       border-radius: 12px;
-      background: #000000;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.48);
-      pointer-events: auto;
-    }
-
-    #video-player {
-      display: block;
-      width: 100%;
-      height: auto;
-      max-height: 78dvh;
-      aspect-ratio: 16 / 9;
-      object-fit: contain;
-      background: #000000;
-    }
-
-    /*
-     * Controles compactos sobre o vídeo.
-     */
-    #controles-video {
-      position: absolute;
-      z-index: 5;
-      right: 8px;
-      bottom: 8px;
-      left: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
-      padding: 7px;
-      border-radius: 10px;
-      background: rgba(0, 0, 0, 0.72);
+      background: rgba(0, 0, 0, 0.7);
       backdrop-filter: blur(5px);
     }
 
-    .botao-controle {
-      flex: 1;
-      min-width: 0;
-      min-height: 38px;
-      padding: 8px 6px;
-      border: 1px solid rgba(255, 255, 255, 0.45);
-      border-radius: 8px;
-      background: rgba(20, 20, 20, 0.84);
-      color: #ffffff;
-      font-size: 12px;
-      font-weight: 700;
-      line-height: 1.15;
+    #linha-tempo {
+      width: 100%;
+      height: 24px;
+      margin: 0;
       cursor: pointer;
+      accent-color: #ffffff;
     }
 
-    #botao-fechar {
-      flex: 0 0 42px;
-      width: 42px;
-      font-size: 20px;
-      background: rgba(105, 10, 10, 0.9);
+    #tempos-video {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 2px;
+      color: #ffffff;
+      font-size: 12px;
+      line-height: 1;
     }
 
     /*
@@ -279,25 +239,6 @@
     .invisivel {
       opacity: 0;
     }
-
-    @media (orientation: landscape) {
-      #camada-video {
-        padding: 10px 18px;
-      }
-
-      #janela-video {
-        width: auto;
-        max-width: 92vw;
-        max-height: 92dvh;
-      }
-
-      #video-player {
-        width: auto;
-        max-width: 92vw;
-        height: 88dvh;
-        max-height: 88dvh;
-      }
-    }
   </style>
 </head>
 
@@ -326,56 +267,22 @@
     Aponte a câmera para uma das imagens indicadas.
   </div>
 
-  <!-- Player fixo do vídeo -->
-  <div id="camada-video" class="oculto">
+  <!-- Linha do tempo do vídeo -->
+  <div id="controle-progresso" class="oculto">
 
-    <div id="janela-video">
+    <input
+      id="linha-tempo"
+      type="range"
+      min="0"
+      max="100"
+      value="0"
+      step="0.1"
+      aria-label="Posição do vídeo"
+    >
 
-      <video
-        id="video-player"
-        src="./video.mp4"
-        preload="auto"
-        playsinline
-        webkit-playsinline
-      ></video>
-
-      <div id="controles-video">
-
-        <button
-          id="botao-pausar"
-          class="botao-controle"
-          type="button"
-        >
-          Pausar
-        </button>
-
-        <button
-          id="botao-som"
-          class="botao-controle"
-          type="button"
-        >
-          Ativar som
-        </button>
-
-        <button
-          id="botao-reiniciar"
-          class="botao-controle"
-          type="button"
-        >
-          Reiniciar
-        </button>
-
-        <button
-          id="botao-fechar"
-          class="botao-controle"
-          type="button"
-          aria-label="Fechar vídeo"
-        >
-          ×
-        </button>
-
-      </div>
-
+    <div id="tempos-video">
+      <span id="tempo-atual">0:00</span>
+      <span id="tempo-total">0:00</span>
     </div>
 
   </div>
@@ -401,6 +308,7 @@
       colorManagement: true;
       physicallyCorrectLights: true;
       antialias: true;
+      sortObjects: true;
     "
     background="transparent: true"
     vr-mode-ui="enabled: false"
@@ -408,15 +316,26 @@
     loading-screen="enabled: false"
   >
 
-    <!-- Arquivos PNG usados como conteúdo -->
     <a-assets timeout="30000">
 
+      <!-- Vídeo acionado pelo alvo 0 -->
+      <video
+        id="video-ra"
+        src="./video.mp4"
+        preload="auto"
+        muted
+        playsinline
+        webkit-playsinline
+      ></video>
+
+      <!-- Primeiro PNG acionado pelo alvo 1 -->
       <img
         id="conteudo-png-1"
         src="./imagem-ra-1.png"
         crossorigin="anonymous"
       >
 
+      <!-- Segundo PNG acionado pelo alvo 2 -->
       <img
         id="conteudo-png-2"
         src="./imagem-ra-2.png"
@@ -433,18 +352,33 @@
 
     <!--
       ALVO 0
-      Primeira imagem adicionada ao compilador.
-      Abre o vídeo fixo.
+      Primeira imagem adicionada ao targets.mind.
+      O vídeo permanece preso ao alvo e acompanha o enquadramento.
     -->
     <a-entity
       id="marcador-video"
       mindar-image-target="targetIndex: 0"
-    ></a-entity>
+    >
+
+      <a-plane
+        id="plano-video"
+        position="0 0 0.02"
+        width="1"
+        height="0.5625"
+        material="
+          src: #video-ra;
+          shader: flat;
+          side: double;
+          transparent: false;
+        "
+      ></a-plane>
+
+    </a-entity>
 
     <!--
       ALVO 1
-      Segunda imagem adicionada ao compilador.
-      Mostra imagem-ra-1.png sobre o alvo.
+      Segunda imagem adicionada ao targets.mind.
+      O tamanho será ajustado automaticamente pelo JavaScript.
     -->
     <a-entity
       id="marcador-png-1"
@@ -453,7 +387,7 @@
 
       <a-plane
         id="plano-png-1"
-        position="0 0 0.02"
+        position="0 0 0.03"
         width="1"
         height="1"
         material="
@@ -469,8 +403,8 @@
 
     <!--
       ALVO 2
-      Terceira imagem adicionada ao compilador.
-      Mostra imagem-ra-2.png sobre o alvo.
+      Terceira imagem adicionada ao targets.mind.
+      O tamanho será ajustado automaticamente pelo JavaScript.
     -->
     <a-entity
       id="marcador-png-2"
@@ -479,7 +413,7 @@
 
       <a-plane
         id="plano-png-2"
-        position="0 0 0.02"
+        position="0 0 0.03"
         width="1"
         height="1"
         material="
@@ -508,6 +442,24 @@
       const marcadorPng2 =
         document.querySelector("#marcador-png-2");
 
+      const videoRA =
+        document.querySelector("#video-ra");
+
+      const planoVideo =
+        document.querySelector("#plano-video");
+
+      const imagemPng1 =
+        document.querySelector("#conteudo-png-1");
+
+      const imagemPng2 =
+        document.querySelector("#conteudo-png-2");
+
+      const planoPng1 =
+        document.querySelector("#plano-png-1");
+
+      const planoPng2 =
+        document.querySelector("#plano-png-2");
+
       const telaInicial =
         document.querySelector("#tela-inicial");
 
@@ -517,36 +469,30 @@
       const orientacao =
         document.querySelector("#orientacao");
 
-      const camadaVideo =
-        document.querySelector("#camada-video");
+      const controleProgresso =
+        document.querySelector("#controle-progresso");
 
-      const videoPlayer =
-        document.querySelector("#video-player");
+      const linhaTempo =
+        document.querySelector("#linha-tempo");
 
-      const botaoPausar =
-        document.querySelector("#botao-pausar");
+      const tempoAtual =
+        document.querySelector("#tempo-atual");
 
-      const botaoSom =
-        document.querySelector("#botao-som");
-
-      const botaoReiniciar =
-        document.querySelector("#botao-reiniciar");
-
-      const botaoFechar =
-        document.querySelector("#botao-fechar");
+      const tempoTotal =
+        document.querySelector("#tempo-total");
 
       const mensagemErro =
         document.querySelector("#mensagem-erro");
 
       let experienciaIniciada = false;
-      let videoAberto = false;
-      let somAtivado = false;
+      let alvoVideoVisivel = false;
+      let usuarioMovendoLinha = false;
 
       let temporizadorErro = null;
       let temporizadorOrientacao = null;
 
       /*
-       * Exibe mensagem de erro temporária.
+       * Exibe uma mensagem de erro temporária.
        */
       function mostrarErro(texto) {
         clearTimeout(temporizadorErro);
@@ -560,7 +506,7 @@
       }
 
       /*
-       * Exibe a orientação inferior.
+       * Exibe uma mensagem inferior.
        */
       function mostrarOrientacao(
         texto,
@@ -577,8 +523,30 @@
         if (ocultarDepois) {
           temporizadorOrientacao = setTimeout(() => {
             orientacao.classList.add("invisivel");
-          }, 3000);
+          }, 2500);
         }
+      }
+
+      /*
+       * Formata os segundos como minutos e segundos.
+       */
+      function formatarTempo(segundos) {
+        if (
+          !Number.isFinite(segundos) ||
+          segundos < 0
+        ) {
+          return "0:00";
+        }
+
+        const minutos =
+          Math.floor(segundos / 60);
+
+        const segundosRestantes =
+          Math.floor(segundos % 60)
+            .toString()
+            .padStart(2, "0");
+
+        return `${minutos}:${segundosRestantes}`;
       }
 
       /*
@@ -593,7 +561,8 @@
         cena.renderer.setClearAlpha(0);
 
         if (cena.canvas) {
-          cena.canvas.style.background = "transparent";
+          cena.canvas.style.background =
+            "transparent";
         }
       }
 
@@ -606,7 +575,7 @@
 
         const videoCamera = videos.find(
           (elemento) =>
-            elemento.id !== "video-player"
+            elemento.id !== "video-ra"
         );
 
         if (!videoCamera) {
@@ -638,7 +607,7 @@
       }
 
       /*
-       * Reforça os ajustes após o carregamento.
+       * Reforça os ajustes após a criação da câmera.
        */
       function reforcarVisualizacao() {
         [
@@ -658,71 +627,112 @@
       }
 
       /*
-       * Abre o vídeo fixo.
+       * Atualiza a textura do vídeo no plano.
        */
-      async function abrirVideo() {
-        if (videoAberto) {
+      function atualizarTexturaVideo() {
+        const objeto =
+          planoVideo.getObject3D("mesh");
+
+        if (!objeto || !objeto.material) {
           return;
         }
 
-        videoAberto = true;
+        objeto.material.needsUpdate = true;
 
-        camadaVideo.classList.remove("oculto");
+        if (objeto.material.map) {
+          objeto.material.map.needsUpdate = true;
+        }
+      }
 
-        videoPlayer.muted = true;
-        somAtivado = false;
+      /*
+       * Ajusta automaticamente a proporção do PNG.
 
-        botaoSom.textContent = "Ativar som";
-        botaoPausar.textContent = "Pausar";
+       * Exemplo:
+       * PNG 1600 × 900:
+       * width = 1
+       * height = 0.5625
 
-        mostrarOrientacao(
-          "Vídeo iniciado. Você já pode afastar a câmera da imagem.",
-          true
-        );
+       * PNG 900 × 1600:
+       * width = 0.5625
+       * height = 1
+       */
+      function ajustarProporcaoPng(
+        elementoImagem,
+        elementoPlano
+      ) {
+        const aplicarTamanho = () => {
+          const larguraOriginal =
+            elementoImagem.naturalWidth;
 
-        try {
-          await videoPlayer.play();
-        } catch (erro) {
-          console.error(
-            "Erro ao iniciar o vídeo:",
-            erro
+          const alturaOriginal =
+            elementoImagem.naturalHeight;
+
+          if (
+            !larguraOriginal ||
+            !alturaOriginal
+          ) {
+            return;
+          }
+
+          const proporcao =
+            larguraOriginal / alturaOriginal;
+
+          let larguraPlano;
+          let alturaPlano;
+
+          /*
+           * A maior dimensão será 1.
+           * A menor será calculada proporcionalmente.
+           */
+          if (proporcao >= 1) {
+            larguraPlano = 1;
+            alturaPlano = 1 / proporcao;
+          } else {
+            larguraPlano = proporcao;
+            alturaPlano = 1;
+          }
+
+          elementoPlano.setAttribute(
+            "width",
+            larguraPlano
           );
 
-          mostrarErro(
-            "O vídeo não iniciou automaticamente. " +
-            "Toque em “Reiniciar”."
+          elementoPlano.setAttribute(
+            "height",
+            alturaPlano
+          );
+
+          console.log(
+            "Proporção ajustada:",
+            larguraOriginal,
+            "x",
+            alturaOriginal,
+            "→",
+            larguraPlano,
+            "x",
+            alturaPlano
+          );
+        };
+
+        if (elementoImagem.complete) {
+          aplicarTamanho();
+        } else {
+          elementoImagem.addEventListener(
+            "load",
+            aplicarTamanho,
+            { once: true }
           );
         }
       }
 
       /*
-       * Fecha o vídeo e volta ao percurso.
+       * Observa quando o MindAR cria o vídeo da câmera.
        */
-      function fecharVideo() {
-        videoPlayer.pause();
-        videoPlayer.currentTime = 0;
-        videoPlayer.muted = true;
-
-        videoAberto = false;
-        somAtivado = false;
-
-        camadaVideo.classList.add("oculto");
-
-        botaoSom.textContent = "Ativar som";
-        botaoPausar.textContent = "Pausar";
-
-        mostrarOrientacao(
-          "Continue o percurso e aponte a câmera para outro ponto de realidade aumentada."
-        );
-      }
-
-      /*
-       * Observa quando o vídeo da câmera é criado.
-       */
-      const observador = new MutationObserver(() => {
-        ajustarVideoDaCamera();
-        tornarCanvasTransparente();
-      });
+      const observador =
+        new MutationObserver(() => {
+          ajustarVideoDaCamera();
+          tornarCanvasTransparente();
+        });
 
       observador.observe(document.body, {
         childList: true,
@@ -730,7 +740,20 @@
       });
 
       /*
-       * Eventos de carregamento.
+       * Ajusta as proporções dos dois PNGs.
+       */
+      ajustarProporcaoPng(
+        imagemPng1,
+        planoPng1
+      );
+
+      ajustarProporcaoPng(
+        imagemPng2,
+        planoPng2
+      );
+
+      /*
+       * Eventos de carregamento da cena.
        */
       cena.addEventListener("loaded", () => {
         tornarCanvasTransparente();
@@ -749,25 +772,142 @@
       });
 
       /*
+       * Eventos do vídeo.
+       */
+      videoRA.addEventListener(
+        "loadedmetadata",
+        () => {
+          linhaTempo.max =
+            videoRA.duration || 0;
+
+          tempoTotal.textContent =
+            formatarTempo(videoRA.duration);
+
+          atualizarTexturaVideo();
+        }
+      );
+
+      videoRA.addEventListener(
+        "canplay",
+        atualizarTexturaVideo
+      );
+
+      videoRA.addEventListener(
+        "playing",
+        atualizarTexturaVideo
+      );
+
+      videoRA.addEventListener(
+        "timeupdate",
+        () => {
+          if (!usuarioMovendoLinha) {
+            linhaTempo.value =
+              videoRA.currentTime || 0;
+          }
+
+          tempoAtual.textContent =
+            formatarTempo(videoRA.currentTime);
+        }
+      );
+
+      videoRA.addEventListener(
+        "ended",
+        () => {
+          /*
+           * Ao terminar, volta ao início.
+           * O vídeo só reproduzirá novamente quando o alvo
+           * for reconhecido outra vez.
+           */
+          videoRA.pause();
+          videoRA.currentTime = 0;
+
+          linhaTempo.value = 0;
+          tempoAtual.textContent = "0:00";
+
+          mostrarOrientacao(
+            "Vídeo encerrado. Afaste e aponte novamente para reiniciar."
+          );
+        }
+      );
+
+      videoRA.addEventListener(
+        "error",
+        () => {
+          mostrarErro(
+            "O vídeo não pôde ser carregado. " +
+            "Verifique o arquivo video.mp4."
+          );
+        }
+      );
+
+      /*
+       * Interação com a linha do tempo.
+       */
+      linhaTempo.addEventListener(
+        "input",
+        () => {
+          usuarioMovendoLinha = true;
+
+          const novoTempo =
+            Number(linhaTempo.value);
+
+          tempoAtual.textContent =
+            formatarTempo(novoTempo);
+        }
+      );
+
+      linhaTempo.addEventListener(
+        "change",
+        async () => {
+          const novoTempo =
+            Number(linhaTempo.value);
+
+          videoRA.currentTime = novoTempo;
+          usuarioMovendoLinha = false;
+
+          atualizarTexturaVideo();
+
+          /*
+           * Se o alvo ainda estiver visível,
+           * o vídeo continua depois do deslocamento.
+           */
+          if (alvoVideoVisivel) {
+            try {
+              await videoRA.play();
+            } catch (erro) {
+              console.error(
+                "Não foi possível continuar o vídeo:",
+                erro
+              );
+            }
+          }
+        }
+      );
+
+      /*
        * Inicia a experiência.
        */
       botaoIniciar.addEventListener(
         "click",
         async () => {
           botaoIniciar.disabled = true;
-          botaoIniciar.textContent = "Iniciando...";
+          botaoIniciar.textContent =
+            "Iniciando...";
 
           try {
             /*
-             * Prepara o vídeo durante o clique.
+             * Prepara o vídeo durante o clique inicial.
+             * Ele permanece mudo para permitir reprodução automática.
              */
-            videoPlayer.muted = true;
-            videoPlayer.load();
+            videoRA.muted = true;
+            videoRA.load();
 
-            await videoPlayer.play();
+            await videoRA.play();
 
-            videoPlayer.pause();
-            videoPlayer.currentTime = 0;
+            atualizarTexturaVideo();
+
+            videoRA.pause();
+            videoRA.currentTime = 0;
 
             const sistemaAR =
               cena.systems["mindar-image-system"];
@@ -785,7 +925,6 @@
             experienciaIniciada = true;
 
             telaInicial.classList.add("oculto");
-            orientacao.classList.remove("oculto");
 
             mostrarOrientacao(
               "Aponte a câmera para uma das imagens indicadas na exposição."
@@ -816,25 +955,73 @@
       marcadorVideo.addEventListener(
         "targetFound",
         async () => {
-          if (
-            !experienciaIniciada ||
-            videoAberto
-          ) {
+          if (!experienciaIniciada) {
             return;
           }
 
-          await abrirVideo();
+          alvoVideoVisivel = true;
+
+          orientacao.classList.add("oculto");
+          controleProgresso.classList.remove(
+            "oculto"
+          );
+
+          try {
+            videoRA.muted = true;
+
+            await videoRA.play();
+
+            atualizarTexturaVideo();
+
+            /*
+             * Reforça a atualização da textura
+             * nos primeiros segundos.
+             */
+            let atualizacoes = 0;
+
+            const intervalo =
+              setInterval(() => {
+                atualizarTexturaVideo();
+
+                atualizacoes += 1;
+
+                if (
+                  atualizacoes >= 40 ||
+                  videoRA.paused
+                ) {
+                  clearInterval(intervalo);
+                }
+              }, 100);
+          } catch (erro) {
+            console.error(
+              "Erro ao reproduzir o vídeo:",
+              erro
+            );
+
+            mostrarErro(
+              "O vídeo não pôde ser iniciado."
+            );
+          }
         }
       );
 
       marcadorVideo.addEventListener(
         "targetLost",
         () => {
-          if (!videoAberto) {
-            mostrarOrientacao(
-              "Imagem não encontrada. Aponte novamente para o ponto indicado."
-            );
-          }
+          alvoVideoVisivel = false;
+
+          /*
+           * O vídeo pausa assim que a imagem sai do enquadramento.
+           */
+          videoRA.pause();
+
+          controleProgresso.classList.add(
+            "oculto"
+          );
+
+          mostrarOrientacao(
+            "Aponte novamente para a imagem do vídeo para continuar."
+          );
         }
       );
 
@@ -848,6 +1035,10 @@
             return;
           }
 
+          controleProgresso.classList.add(
+            "oculto"
+          );
+
           mostrarOrientacao(
             "Conteúdo de realidade aumentada encontrado.",
             true
@@ -858,11 +1049,9 @@
       marcadorPng1.addEventListener(
         "targetLost",
         () => {
-          if (!videoAberto) {
-            mostrarOrientacao(
-              "Continue o percurso e procure outro ponto de realidade aumentada."
-            );
-          }
+          mostrarOrientacao(
+            "Continue o percurso e procure outro ponto de realidade aumentada."
+          );
         }
       );
 
@@ -876,6 +1065,10 @@
             return;
           }
 
+          controleProgresso.classList.add(
+            "oculto"
+          );
+
           mostrarOrientacao(
             "Conteúdo de realidade aumentada encontrado.",
             true
@@ -886,127 +1079,14 @@
       marcadorPng2.addEventListener(
         "targetLost",
         () => {
-          if (!videoAberto) {
-            mostrarOrientacao(
-              "Continue o percurso e procure outro ponto de realidade aumentada."
-            );
-          }
-        }
-      );
-
-      /*
-       * Controles do vídeo.
-       */
-      botaoPausar.addEventListener(
-        "click",
-        async () => {
-          if (videoPlayer.paused) {
-            try {
-              await videoPlayer.play();
-
-              botaoPausar.textContent =
-                "Pausar";
-            } catch (erro) {
-              mostrarErro(
-                "Não foi possível continuar o vídeo."
-              );
-            }
-          } else {
-            videoPlayer.pause();
-
-            botaoPausar.textContent =
-              "Continuar";
-          }
-        }
-      );
-
-      botaoSom.addEventListener(
-        "click",
-        async () => {
-          try {
-            if (!somAtivado) {
-              videoPlayer.muted = false;
-              somAtivado = true;
-
-              botaoSom.textContent =
-                "Sem som";
-
-              if (videoPlayer.paused) {
-                await videoPlayer.play();
-
-                botaoPausar.textContent =
-                  "Pausar";
-              }
-            } else {
-              videoPlayer.muted = true;
-              somAtivado = false;
-
-              botaoSom.textContent =
-                "Ativar som";
-            }
-          } catch (erro) {
-            videoPlayer.muted = true;
-            somAtivado = false;
-
-            botaoSom.textContent =
-              "Ativar som";
-
-            mostrarErro(
-              "O navegador não permitiu ativar o som."
-            );
-          }
-        }
-      );
-
-      botaoReiniciar.addEventListener(
-        "click",
-        async () => {
-          try {
-            videoPlayer.currentTime = 0;
-
-            await videoPlayer.play();
-
-            botaoPausar.textContent =
-              "Pausar";
-          } catch (erro) {
-            mostrarErro(
-              "Não foi possível reiniciar o vídeo."
-            );
-          }
-        }
-      );
-
-      botaoFechar.addEventListener(
-        "click",
-        fecharVideo
-      );
-
-      /*
-       * Final do vídeo.
-       */
-      videoPlayer.addEventListener(
-        "ended",
-        () => {
-          botaoPausar.textContent =
-            "Continuar";
-
           mostrarOrientacao(
-            "Vídeo encerrado. Reinicie ou feche para continuar o percurso."
-          );
-        }
-      );
-
-      videoPlayer.addEventListener(
-        "error",
-        () => {
-          mostrarErro(
-            "O vídeo não pôde ser carregado. Verifique o arquivo video.mp4."
+            "Continue o percurso e procure outro ponto de realidade aumentada."
           );
         }
       );
 
       /*
-       * Ajustes em mudança de tela.
+       * Ajustes em mudanças de orientação ou tamanho.
        */
       window.addEventListener(
         "resize",
@@ -1037,10 +1117,7 @@
             document.visibilityState ===
             "hidden"
           ) {
-            videoPlayer.pause();
-
-            botaoPausar.textContent =
-              "Continuar";
+            videoRA.pause();
           } else {
             reforcarVisualizacao();
           }
